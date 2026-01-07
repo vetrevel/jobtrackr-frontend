@@ -9,234 +9,131 @@ function App() {
   const [showModal, setShowModal] = useState(false);
   const [editJob, setEditJob] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  // 🔒 Stable backend URL (no env confusion)
-  const API_URL = "http://localhost:5000/api";
+  const API_URL = import.meta.env.VITE_API_URL;
 
-  // =========================
-  // FETCH JOBS
-  // =========================
+  // 🔹 Fetch jobs
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        setLoading(true);
-        const res = await fetch(`${API_URL}/jobs`);
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch jobs");
-        }
-
+        const res = await fetch(`${API_URL}/api/jobs`);
         const data = await res.json();
-        console.log("FETCHED JOBS:", data);
 
-        // Safety: allow only valid jobs
-        const cleanJobs = Array.isArray(data)
-          ? data.filter(
-              (job) =>
-                job._id &&
-                job.title &&
-                job.company &&
-                job.status
-            )
-          : [];
+        // Clean invalid jobs
+        const cleanJobs = data.filter(
+          (job) => job.title && job.company && job.status
+        );
 
         setJobs(cleanJobs);
-        setError("");
-      } catch (err) {
-        console.error(err);
-        setError("Unable to load jobs");
+      } catch (error) {
+        console.error("Failed to fetch jobs", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchJobs();
-  }, []);
+  }, [API_URL]);
 
-  // =========================
-  // ADD JOB
-  // =========================
-  const addJob = async (job) => {
-    const res = await fetch(`${API_URL}/jobs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(job),
-    });
-
-    const newJob = await res.json();
-    setJobs((prev) => [...prev, newJob]);
-  };
-
-  // =========================
-  // UPDATE JOB
-  // =========================
-  const updateJob = async (job) => {
-    const res = await fetch(`${API_URL}/jobs/${job._id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(job),
-    });
-
-    const updatedJob = await res.json();
-    setJobs((prev) =>
-      prev.map((j) =>
-        j._id === updatedJob._id ? updatedJob : j
-      )
-    );
-  };
-
-  // =========================
-  // DELETE JOB
-  // =========================
-  const deleteJob = async (id) => {
-    await fetch(`${API_URL}/jobs/${id}`, {
-      method: "DELETE",
-    });
-
-    setJobs((prev) => prev.filter((job) => job._id !== id));
-  };
-
-  // =========================
-  // FILTER LOGIC
-  // =========================
+  // 🔹 Filter logic
   const filteredJobs =
     filter === "All"
       ? jobs
-      : jobs.filter(
-          (job) =>
-            job.status?.toLowerCase() ===
-            filter.toLowerCase()
-        );
+      : jobs.filter((job) => job.status === filter);
 
-  // =========================
-  // STATS
-  // =========================
-  const stats = {
-    total: jobs.length,
-    applied: jobs.filter(
-      (j) => j.status === "Applied"
-    ).length,
-    interview: jobs.filter(
-      (j) => j.status === "Interview"
-    ).length,
-    rejected: jobs.filter(
-      (j) => j.status === "Rejected"
-    ).length,
+  // 🔹 Stats
+  const totalCount = jobs.length;
+  const appliedCount = jobs.filter((j) => j.status === "Applied").length;
+  const interviewCount = jobs.filter((j) => j.status === "Interview").length;
+  const rejectedCount = jobs.filter((j) => j.status === "Rejected").length;
+
+  // 🔹 Delete job
+  const handleDelete = async (id) => {
+    try {
+      await fetch(`${API_URL}/api/jobs/${id}`, {
+        method: "DELETE",
+      });
+      setJobs(jobs.filter((job) => job._id !== id));
+    } catch (error) {
+      console.error("Delete failed", error);
+    }
   };
 
-  // =========================
-  // UI STATES
-  // =========================
-  if (loading) {
-    return (
-      <h2 className="p-6 text-lg">
-        Loading jobs...
-      </h2>
-    );
-  }
+  // 🔹 Edit job
+  const handleEdit = (job) => {
+    setEditJob(job);
+    setShowModal(true);
+  };
 
-  if (error) {
-    return (
-      <h2 className="p-6 text-red-600">
-        {error}
-      </h2>
-    );
-  }
-
-  // =========================
-  // MAIN UI
-  // =========================
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* NAVBAR */}
-      <Navbar
-        activeFilter={filter}
-        onFilterChange={setFilter}
-        onAdd={() => {
-          setEditJob(null);
-          setShowModal(true);
-        }}
-      />
+    <>
+      <Navbar onAdd={() => setShowModal(true)} />
 
-      {/* STATS */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-6 mt-6">
-        <StatCard label="Total" value={stats.total} />
-        <StatCard
-          label="Applied"
-          value={stats.applied}
-          color="blue"
-        />
-        <StatCard
-          label="Interview"
-          value={stats.interview}
-          color="yellow"
-        />
-        <StatCard
-          label="Rejected"
-          value={stats.rejected}
-          color="red"
-        />
+      {/* FILTER BUTTONS */}
+      <div className="flex gap-3 px-6 mt-4">
+        {["All", "Applied", "Interview", "Rejected"].map((status) => (
+          <button
+            key={status}
+            onClick={() => setFilter(status)}
+            className={`px-4 py-1 rounded-full text-sm ${
+              filter === status
+                ? "bg-indigo-600 text-white"
+                : "bg-indigo-200 text-indigo-800"
+            }`}
+          >
+            {status}
+          </button>
+        ))}
       </div>
 
-      {/* MODAL */}
-      {showModal && (
-        <AddJobModal
-          initialData={editJob}
-          onClose={() => {
-            setShowModal(false);
-            setEditJob(null);
-          }}
-          onSave={editJob ? updateJob : addJob}
-        />
-      )}
+      {/* STATS */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-6 mt-6">
+        <StatCard title="Total" value={totalCount} />
+        <StatCard title="Applied" value={appliedCount} />
+        <StatCard title="Interview" value={interviewCount} />
+        <StatCard title="Rejected" value={rejectedCount} />
+      </div>
 
       {/* JOB LIST */}
-      <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredJobs.length === 0 ? (
-          <p className="text-center text-gray-500 col-span-full">
-            No jobs found
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-6 mt-6">
+        {loading ? (
+          <p className="text-gray-500">Loading jobs...</p>
+        ) : filteredJobs.length === 0 ? (
+          <p className="text-gray-500 col-span-full text-center">
+            No jobs found for this status
           </p>
         ) : (
           filteredJobs.map((job) => (
             <JobCard
               key={job._id}
-              {...job}
-              onDelete={deleteJob}
-              onEdit={(job) => {
-                setEditJob(job);
-                setShowModal(true);
-              }}
+              job={job}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           ))
         )}
       </div>
-    </div>
+
+      {/* MODAL */}
+      {showModal && (
+        <AddJobModal
+          setShowModal={setShowModal}
+          jobs={jobs}
+          setJobs={setJobs}
+          editJob={editJob}
+          setEditJob={setEditJob}
+        />
+      )}
+    </>
   );
 }
 
-// =========================
-// STAT CARD COMPONENT
-// =========================
-function StatCard({ label, value, color }) {
-  const colors = {
-    blue: "bg-blue-100 text-blue-700",
-    yellow: "bg-yellow-100 text-yellow-700",
-    red: "bg-red-100 text-red-700",
-  };
-
+// 🔹 Small stat card component
+function StatCard({ title, value }) {
   return (
-    <div
-      className={`p-4 rounded shadow text-center ${
-        colors[color] || "bg-white"
-      }`}
-    >
-      <p className="text-sm text-gray-500">
-        {label}
-      </p>
-      <p className="text-2xl font-bold">
-        {value}
-      </p>
+    <div className="bg-white p-4 rounded shadow text-center">
+      <p className="text-gray-500">{title}</p>
+      <h2 className="text-2xl font-bold">{value}</h2>
     </div>
   );
 }
