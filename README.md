@@ -1,16 +1,28 @@
-# React + Vite
+# JobTrackr – MERN Stack Job Application Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+JobTrackr is a full-stack MERN application that helps users track job applications with real-time status updates, filtering, and analytics.
 
-Currently, two official plugins are available:
+## 🚀 Features
+- Add, edit, and delete job applications
+- Filter jobs by status (Applied, Interview, Rejected)
+- Live statistics dashboard
+- Responsive UI with smooth animations
+- Full CRUD functionality
+- Persistent data storage using MongoDB
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🛠 Tech Stack
+- Frontend: React, Vite, Tailwind CSS
+- Backend: Node.js, Express.js
+- Database: MongoDB Atlas
+- Deployment: Vercel (Frontend), Render (Backend)
 
-## React Compiler
+## 🌐 Live Demo
+Frontend: https://<https://jobtrackr-frontend.vercel.app>  
+Backend: https://jobtrackr-backend-rfvb.onrender.com
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 📦 Installation (Local)
+```bash
+git clone <repo-url>
+npm install
+npm run dev
